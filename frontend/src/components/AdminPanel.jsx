@@ -27,9 +27,15 @@ function AdminPanel({ contract }) {
     let msg =
       error.reason ||
       error?.data?.message ||
+      error?.error?.data?.message ||
       error?.error?.message ||
       error?.message ||
       'Transaction failed.';
+
+    const match = msg.match(/reverted with reason string ['"]([^'"]+)['"]/);
+    if (match) {
+      return match[1];
+    }
     return msg.replace(/^execution reverted:\s*/i, '');
   };
 

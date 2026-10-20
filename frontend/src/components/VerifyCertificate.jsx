@@ -15,7 +15,7 @@ function VerifyCertificate({ contract }) {
     }
 
     if (!contract) {
-      setErrorMessage('Please connect your wallet first to interact with the contract.');
+      setErrorMessage('Contract connection unavailable. Please ensure your wallet is connected or the blockchain node is running.');
       return;
     }
 
@@ -39,12 +39,17 @@ function VerifyCertificate({ contract }) {
       let message =
         error.reason ||
         error?.data?.message ||
+        error?.error?.data?.message ||
         error?.error?.message ||
         error?.message ||
         'Failed to verify certificate.';
 
-      // Strip common prefixes if present (e.g., "execution reverted: ")
-      message = message.replace(/^execution reverted:\s*/i, '');
+      const match = message.match(/reverted with reason string ['"]([^'"]+)['"]/);
+      if (match) {
+        message = match[1];
+      } else {
+        message = message.replace(/^execution reverted:\s*/i, '');
+      }
 
       setErrorMessage(message);
     } finally {

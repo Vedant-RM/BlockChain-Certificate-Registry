@@ -6,7 +6,8 @@ import AdminPanel from './components/AdminPanel.jsx';
 
 const HARDHAT_CHAIN_ID = 31337;
 const HARDHAT_CHAIN_ID_HEX = '0x7a69';
-const HARDHAT_RPC_URL = 'http://10.107.249.22:8545';
+const isLocalAdminHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const rpcUrl = `http://${window.location.hostname}:8545`;
 
 function App() {
   const [currentAccount, setCurrentAccount] = useState('');
@@ -14,14 +15,35 @@ function App() {
   const [connectionMode, setConnectionMode] = useState(''); // 'metamask' | 'direct'
   const [chainInfo, setChainInfo] = useState('');
 
-  // Auto-connect to Hardhat localhost on page load if the node is reachable
+  // Initialize contract & connection based on role (host admin vs public LAN verifier)
   useEffect(() => {
+    // Non-admin external client (opened over LAN IP like 10.107.249.22):
+    // Read-only provider with zero signing authority
+    if (!isLocalAdminHost) {
+      const initReadOnly = async () => {
+        try {
+          const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+          const readOnlyContract = new ethers.Contract(
+            contractAddress,
+            contractABI,
+            provider
+          );
+          setContract(readOnlyContract);
+        } catch (err) {
+          console.error('Error initializing read-only provider:', err);
+        }
+      };
+      initReadOnly();
+      return;
+    }
+
+    // Host machine (localhost / 127.0.0.1): Full Admin permissions
     let handleChainChanged;
     let handleAccountsChanged;
 
     const autoConnectHardhat = async () => {
       try {
-        const provider = new ethers.providers.JsonRpcProvider(HARDHAT_RPC_URL);
+        const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
         // Quick reachability check – getNetwork will throw if node is down
         const network = await provider.getNetwork();
         if (network.chainId === HARDHAT_CHAIN_ID) {
@@ -112,7 +134,7 @@ function App() {
               {
                 chainId: HARDHAT_CHAIN_ID_HEX,
                 chainName: 'Hardhat Localhost',
-                rpcUrls: [HARDHAT_RPC_URL],
+                rpcUrls: [rpcUrl],
                 nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
               },
             ],
@@ -166,7 +188,7 @@ function App() {
    */
   const connectDirect = async () => {
     try {
-      const provider = new ethers.providers.JsonRpcProvider(HARDHAT_RPC_URL);
+      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
       const network = await provider.getNetwork();
 
       if (network.chainId !== HARDHAT_CHAIN_ID) {
@@ -195,7 +217,22 @@ function App() {
     <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
       <h1>Blockchain Certificate Registry</h1>
       <header style={{ marginBottom: '2rem' }}>
-        {!currentAccount ? (
+        {!isLocalAdminHost ? (
+          <div
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#f0fdf4',
+              padding: '8px 18px',
+              borderRadius: '9999px',
+              border: '1px solid #86efac',
+              color: '#166534',
+              fontWeight: '600',
+              fontSize: '14px',
+            }}
+          >
+            🌐 Public Verifier Portal (Read-Only Mode)
+          </div>
+        ) : !currentAccount ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
             <button
               onClick={connectWallet}
@@ -263,13 +300,48 @@ function App() {
                 DIRECT RPC
               </span>
             )}
+            <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              {connectionMode === 'direct' ? (
+                <button
+                  onClick={connectWallet}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    fontWeight: '600',
+                  }}
+                >
+                  Switch to MetaMask
+                </button>
+              ) : (
+                <button
+                  onClick={connectDirect}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    fontWeight: '600',
+                  }}
+                >
+                  Switch to Direct RPC
+                </button>
+              )}
+            </div>
           </div>
         )}
       </header>
 
       <main>
         <VerifyCertificate contract={contract} />
-        <AdminPanel contract={contract} />
+        {isLocalAdminHost && <AdminPanel contract={contract} />}
       </main>
     </div>
   );
