@@ -1,0 +1,21 @@
+{
+  "name": "blockchain-project",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.cjs",
+    "deploy:localhost": "hardhat run scripts/deploy.cjs --network localhost",
+    "node": "hardhat node",
+    "interact": "hardhat run interact.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "hardhat": "^2.22.17"
+  }
+}
