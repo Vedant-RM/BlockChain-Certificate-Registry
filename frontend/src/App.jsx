@@ -6,7 +6,7 @@ import AdminPanel from './components/AdminPanel.jsx';
 
 const HARDHAT_CHAIN_ID = 31337;
 const HARDHAT_CHAIN_ID_HEX = '0x7a69';
-const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
+const HARDHAT_RPC_URL = 'http://10.107.249.22:8545';
 
 function App() {
   const [currentAccount, setCurrentAccount] = useState('');
